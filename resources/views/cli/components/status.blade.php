@@ -32,15 +32,15 @@ if (! empty($extra)) {
 
 ?>
 <div>
-    @include('elasticlens::cli.components.hr',['color' => $color])
+    @include('omnievent::cli.components.hr',['color' => $color])
     <div class="flex space-x-1 mx-1">
         <span class="{{$class}} px-1 ml-1">{{$name}}</span>
         <span class="flex-1">{!! $title !!}</span>
         @if(!empty($help))
             @foreach ($help as $helperRow)
-                @include('elasticlens::cli.components.status-help',['value' => $helperRow])
+                @include('omnievent::cli.components.status-help',['value' => $helperRow])
             @endforeach
         @endif
     </div>
-    @include('elasticlens::cli.components.hr',['color' => $color])
+    @include('omnievent::cli.components.hr',['color' => $color])
 </div>

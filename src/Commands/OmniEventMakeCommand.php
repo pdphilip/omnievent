@@ -27,7 +27,7 @@ class OmniEventMakeCommand extends GeneratorCommand
         $modelCheck = config('omnievent.namespaces.models', 'App\Models').'\\'.$model;
         if (! $this->class_exists_case_sensitive($modelCheck)) {
 
-            render(view('elasticlens::cli.components.status', [
+            render(view('omnievent::cli.components.status', [
                 'name' => 'ERROR',
                 'status' => 'error',
                 'title' => 'Base Model ('.$model.') was not found at: '.$modelCheck,
