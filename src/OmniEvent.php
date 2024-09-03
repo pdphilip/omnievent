@@ -4,8 +4,8 @@ namespace PDPhilip\OmniEvent;
 
 use PDPhilip\Elasticsearch\Eloquent\Model;
 
-class OmniEvent {
-
+class OmniEvent
+{
     //----------------------------------------------------------------------
     // Events
     //----------------------------------------------------------------------
@@ -26,6 +26,7 @@ class OmniEvent {
     public static function getEventModel($eventModel): Model
     {
         $eventModel = config('omnievent.namespaces.events').'\\'.$eventModel;
+
         return new $eventModel;
     }
 
@@ -40,6 +41,4 @@ class OmniEvent {
 
         return $eventModels;
     }
-
-
 }
