@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Indexes;
+namespace App\Models\Events;
 
 use App\Models\{{ model }};
 use PDPhilip\OmniEvent\EventModel;
