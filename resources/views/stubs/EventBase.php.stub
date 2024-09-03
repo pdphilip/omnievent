@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Models\Indexes;
+
+use App\Models\{{ model }};
+use PDPhilip\OmniEvent\EventModel;
+
+class {{ model }}Event extends EventModel
+{
+    protected $baseModel = {{ model }}::class;
+
+	public function modelType({{ model }} $model)
+	{
+		return null;
+    }
+
+}
