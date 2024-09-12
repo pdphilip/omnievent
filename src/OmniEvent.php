@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PDPhilip\OmniEvent;
 
 use PDPhilip\Elasticsearch\Eloquent\Model;
@@ -15,7 +17,7 @@ class OmniEvent
         return config('omnievent.namespaces.events').'\\'.class_basename($baseModel).'Event';
     }
 
-    public static function fetchEventModel($baseModel): Model
+    public static function fetchEventModel($baseModel): EventModel
     {
         $eventModel = self::fetchEventModelClass($baseModel);
 

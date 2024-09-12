@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PDPhilip\OmniEvent\Commands;
 
 use Exception;
@@ -27,7 +29,7 @@ class OmniEventMakeCommand extends GeneratorCommand
         $modelCheck = config('omnievent.namespaces.models', 'App\Models').'\\'.$model;
         if (! $this->class_exists_case_sensitive($modelCheck)) {
 
-            render(view('omnievent::cli.components.status', [
+            render((string) view('omnievent::cli.components.status', [
                 'name' => 'ERROR',
                 'status' => 'error',
                 'title' => 'Base Model ('.$model.') was not found at: '.$modelCheck,
@@ -43,7 +45,7 @@ class OmniEventMakeCommand extends GeneratorCommand
         $eventModel = config('omnievent.namespaces.events', 'App\Models\Events').'\\'.$model.'Event';
         if ($this->class_exists_case_sensitive($eventModel)) {
 
-            render(view('omnievent::cli.components.status', [
+            render((string) view('omnievent::cli.components.status', [
                 'name' => 'ERROR',
                 'status' => 'error',
                 'title' => 'Event Model (for '.$model.' Model) already exists at: '.$eventModel,
@@ -72,12 +74,12 @@ class OmniEventMakeCommand extends GeneratorCommand
         // Write the file to disk
         $this->files->put($path, $stub);
 
-        render(view('omnievent::cli.components.status', [
+        render((string) view('omnievent::cli.components.status', [
             'name' => 'SUCCESS',
             'status' => 'success',
             'title' => 'Event Model (for '.$model.' Model) created at: '.$eventModel,
         ]));
-        render(view('omnievent::cli.components.code-trait', [
+        render((string) view('omnievent::cli.components.code-trait', [
             'model' => $model,
         ]));
 

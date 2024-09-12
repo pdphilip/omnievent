@@ -1,16 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PDPhilip\OmniEvent;
 
+use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use PDPhilip\Elasticsearch\Eloquent\Builder as EloquentBuilder;
 use PDPhilip\Elasticsearch\Eloquent\Model;
+use PDPhilip\Elasticsearch\Query\Builder;
+use PDPhilip\Elasticsearch\Relations\BelongsTo;
 use PDPhilip\Elasticsearch\Schema\IndexBlueprint;
 use PDPhilip\Elasticsearch\Schema\Schema;
 use PDPhilip\OmniEvent\Traits\Timer;
 
 /**
+ * @method static EloquentBuilder query()
+ *
  * *****Fields*******
  *
  * @property string $_id
@@ -22,6 +31,8 @@ use PDPhilip\OmniEvent\Traits\Timer;
  * @property Carbon|null $created_at
  * @property-read mixed $hits
  * @property-read mixed $model
+ *
+ * @mixin Builder
  */
 abstract class EventModel extends Model
 {
@@ -33,12 +44,12 @@ abstract class EventModel extends Model
 
     const UPDATED_AT = null;
 
-    public function model()
+    public function model(): BelongsTo
     {
         return $this->belongsTo($this->getBaseModel(), 'model_id');
     }
 
-    public function guessBaseModelName()
+    public function guessBaseModelName(): string
     {
         $baseTable = $this->getTable();
         $prefix = DB::connection('elasticsearch')->getConfig('index_prefix');
@@ -50,12 +61,11 @@ abstract class EventModel extends Model
         $baseModel = Str::singular($baseTable);
 
         $baseModel = Str::studly($baseModel);
-        $baseModel = 'App\Models\\'.$baseModel;
 
-        return $baseModel;
+        return 'App\Models\\'.$baseModel;
     }
 
-    public function getBaseModel()
+    public function getBaseModel(): string
     {
         if (! $this->baseModel) {
             return $this->guessBaseModelName();
@@ -76,33 +86,40 @@ abstract class EventModel extends Model
 
     }
 
-    public static function saveEvent($model, $event, $meta = [])
+    public static function saveEvent($model, $event, $meta = []): bool
     {
-        $model_id = $model->{$model->getKeyName()};
+        try {
+            $model_id = $model->{$model->getKeyName()};
 
-        // @phpstan-ignore-next-line
-        $eventModel = new static;
-        $modelType = null;
-        if (method_exists($eventModel, 'modelType')) {
-            $modelType = $eventModel->modelType($model);
-        }
-        $eventModel->model_id = $model_id;
-        if ($modelType) {
-            $eventModel->model_type = $modelType;
-        }
-        $eventModel->event = $event;
-        if ($meta) {
-            if (! is_array($meta)) {
-                $meta = [
-                    'key' => $meta,
-                ];
+            // @phpstan-ignore-next-line
+            $eventModel = new static;
+            $modelType = null;
+            if (method_exists($eventModel, 'modelType')) {
+                $modelType = $eventModel->modelType($model);
             }
-            $eventModel->meta = $meta;
-        }
-        $eventModel->ts = time();
-        $eventModel->saveWithoutRefresh();
+            $eventModel->model_id = $model_id;
+            if ($modelType) {
+                $eventModel->model_type = $modelType;
+            }
+            $eventModel->event = $event;
+            if ($meta) {
+                if (! is_array($meta)) {
+                    $meta = [
+                        'key' => $meta,
+                    ];
+                }
+                $eventModel->meta = $meta;
+            }
+            $eventModel->ts = time();
+            $eventModel->saveWithoutRefresh();
 
-        return $eventModel;
+        } catch (Exception $e) {
+            Log::error($e->getMessage(), $e->getTrace());
+
+            return false;
+        }
+
+        return true;
     }
 
     public static function validateSchema(): array
@@ -161,7 +178,7 @@ abstract class EventModel extends Model
         });
     }
 
-    public static function deleteAllEvents($model)
+    public static function deleteAllEvents($model): void
     {
         $model_id = $model->{$model->getKeyName()};
 
