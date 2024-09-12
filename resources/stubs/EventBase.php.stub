@@ -9,9 +9,9 @@ class {{ model }}Event extends EventModel
 {
     protected $baseModel = {{ model }}::class;
 
-	public function modelType({{ model }} $model)
-	{
-		return null;
+    public function modelType({{ model }} $model)
+    {
+        return null;
     }
 
 }

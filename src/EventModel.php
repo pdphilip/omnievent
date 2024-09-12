@@ -20,8 +20,10 @@ use PDPhilip\OmniEvent\Traits\Timer;
  * @property int $ts
  * @property array $meta
  * @property Carbon|null $created_at
+ * @property-read mixed $hits
+ * @property-read mixed $model
  */
-class EventModel extends Model
+abstract class EventModel extends Model
 {
     use Timer;
 
@@ -78,6 +80,7 @@ class EventModel extends Model
     {
         $model_id = $model->{$model->getKeyName()};
 
+        // @phpstan-ignore-next-line
         $eventModel = new static;
         $modelType = null;
         if (method_exists($eventModel, 'modelType')) {
@@ -102,27 +105,42 @@ class EventModel extends Model
         return $eventModel;
     }
 
-    public static function validateSchema()
+    public static function validateSchema(): array
     {
-        $eventModel = new static;
-        $eventModel->startTimer();
-        $tableName = $eventModel->getTable();
-        $index = Schema::getIndex($tableName);
-        if (! $index) {
-            Schema::create($tableName, function (IndexBlueprint $index) {
-                $index->keyword('model_id');
-                $index->keyword('model_type');
-                $index->keyword('event');
-                $index->integer('ts');
-                $index->mapProperty('meta', 'flattened');
-            });
+        $validated['success'] = false;
+        $validated['data'] = [];
+        $validated['message'] = '';
+        try {
+            // @phpstan-ignore-next-line
+            $eventModel = new static;
+            $eventModel->startTimer();
+            $tableName = $eventModel->getTable();
+            $index = Schema::getIndex($tableName);
+            $validated['message'] = 'Index Exists';
+            if (! $index) {
+                Schema::create($tableName, function (IndexBlueprint $index) {
+                    $index->keyword('model_id');
+                    $index->keyword('model_type');
+                    $index->keyword('event');
+                    $index->integer('ts');
+                    $index->mapProperty('meta', 'flattened');
+                });
+                $validated['message'] = 'Index Created';
+            }
+            $validated['success'] = true;
+            $validated['data'] = $eventModel->getTime();
+
+            return $validated;
+        } catch (\Exception $e) {
+            $validated['message'] = $e->getMessage();
         }
 
-        return $eventModel->getTime();
+        return $validated;
     }
 
     public static function transformModelRelationship($collection)
     {
+        // @phpstan-ignore-next-line
         $baseModel = (new static)->getBaseModel();
         $modelName = Str::lcfirst(class_basename($baseModel));
 
@@ -130,6 +148,7 @@ class EventModel extends Model
 
             $item->{$modelName.'_id'} = $item->model_id;
             if (isset($item->model_id_count)) {
+                // @phpstan-ignore-next-line
                 $item->hits = $item->model_id_count;
                 unset($item->model_id_count);
             }

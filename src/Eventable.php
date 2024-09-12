@@ -3,6 +3,7 @@
 namespace PDPhilip\OmniEvent;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use PDPhilip\Elasticsearch\Eloquent\Builder;
 
 trait Eventable
@@ -16,12 +17,17 @@ trait Eventable
     public static function bootEventable()
     {
         $eventModel = OmniEvent::fetchEventModel((new static));
-        $eventModel::validateSchema();
-        self::$_eventModel = OmniEvent::fetchEventModel((new static));
+        $validated = $eventModel::validateSchema();
+        if ($validated['success']) {
+            self::$_eventModel = OmniEvent::fetchEventModel((new static));
 
-        static::deleted(function ($model) {
-            self::$_eventModel::deleteAllEvents($model);
-        });
+            static::deleted(function ($model) {
+                self::$_eventModel::deleteAllEvents($model);
+            });
+        } else {
+            Log::error('Event tracking failed to boot: '.$validated['message']);
+        }
+
     }
 
     public function triggerEvent($event, $meta = [])
