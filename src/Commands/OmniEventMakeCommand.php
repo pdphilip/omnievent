@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use ReflectionClass;
 use RuntimeException;
 
-use function Termwind\render;
+use function OmniTerm\render;
 
 class OmniEventMakeCommand extends GeneratorCommand
 {
