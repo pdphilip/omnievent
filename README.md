@@ -28,7 +28,7 @@ composer require pdphilip/omnievent
 ```
 
 ```bash
-composer php artisan omnievent:install
+php artisan omnievent:install
 ```
 
 ## Changelog
