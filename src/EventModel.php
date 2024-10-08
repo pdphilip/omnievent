@@ -28,6 +28,7 @@ use PDPhilip\OmniEvent\Traits\Timer;
  * @property string $event
  * @property int $ts
  * @property array $meta
+ * @property array $request
  * @property Carbon|null $created_at
  * @property-read mixed $hits
  * @property-read mixed $model
@@ -110,6 +111,9 @@ abstract class EventModel extends Model
                 }
                 $eventModel->meta = $meta;
             }
+            if (config('omnievent.save_request')) {
+                $eventModel->request = OmniEvent::buildRequest();
+            }
             $eventModel->ts = time();
             $eventModel->saveWithoutRefresh();
 
@@ -141,6 +145,22 @@ abstract class EventModel extends Model
                     $index->keyword('event');
                     $index->integer('ts');
                     $index->mapProperty('meta', 'flattened');
+                    $index->keyword('request.ip');
+                    $index->keyword('request.browser');
+                    $index->keyword('request.device');
+                    $index->keyword('request.deviceType');
+                    $index->keyword('request.os');
+                    $index->keyword('request.country');
+                    $index->keyword('request.region');
+                    $index->keyword('request.city');
+                    $index->keyword('request.postal_code');
+                    $index->float('request.lat');
+                    $index->float('request.lon');
+                    $index->keyword('request.timezone');
+                    $index->boolean('request.is_bot');
+                    $index->integer('request.threat_score');
+                    $index->geo('request.geo');
+
                 });
                 $validated['message'] = 'Index Created';
             }

@@ -12,6 +12,8 @@ return [
         'events' => 'App\Models\Events',
     ],
 
+    'save_request' => true,
+
     'app_paths' => [
         'models' => 'Models/',
         'events' => 'Models/Events/',
