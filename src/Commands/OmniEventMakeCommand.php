@@ -22,10 +22,10 @@ class OmniEventMakeCommand extends GeneratorCommand
     {
         $this->newLine();
         $model = $this->argument('model');
-        //ensure casing is correct
+        // ensure casing is correct
         $model = Str::studly($model);
 
-        //Check if model exists
+        // Check if model exists
         $modelCheck = config('omnievent.namespaces.models', 'App\Models').'\\'.$model;
         if (! $this->class_exists_case_sensitive($modelCheck)) {
 
@@ -41,7 +41,7 @@ class OmniEventMakeCommand extends GeneratorCommand
 
         }
 
-        //check if there already is an indexedModel for the model
+        // check if there already is an indexedModel for the model
         $eventModel = config('omnievent.namespaces.events', 'App\Models\Events').'\\'.$model.'Event';
         if ($this->class_exists_case_sensitive($eventModel)) {
 

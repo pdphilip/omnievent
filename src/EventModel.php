@@ -12,8 +12,7 @@ use Illuminate\Support\Str;
 use PDPhilip\Elasticsearch\Eloquent\Builder as EloquentBuilder;
 use PDPhilip\Elasticsearch\Eloquent\Model;
 use PDPhilip\Elasticsearch\Query\Builder;
-use PDPhilip\Elasticsearch\Relations\BelongsTo;
-use PDPhilip\Elasticsearch\Schema\IndexBlueprint;
+use PDPhilip\Elasticsearch\Schema\Blueprint;
 use PDPhilip\Elasticsearch\Schema\Schema;
 use PDPhilip\OmniEvent\Traits\Timer;
 
@@ -45,7 +44,7 @@ abstract class EventModel extends Model
 
     const UPDATED_AT = null;
 
-    public function model(): BelongsTo
+    public function model()
     {
         return $this->belongsTo($this->getBaseModel(), 'model_id');
     }
@@ -115,7 +114,7 @@ abstract class EventModel extends Model
                 $eventModel->request = OmniEvent::buildRequest();
             }
             $eventModel->ts = time();
-            $eventModel->saveWithoutRefresh();
+            $eventModel->withoutRefresh()->save();
 
         } catch (Exception $e) {
             Log::error($e->getMessage(), $e->getTrace());
@@ -139,12 +138,12 @@ abstract class EventModel extends Model
             $index = Schema::getIndex($tableName);
             $validated['message'] = 'Index Exists';
             if (! $index) {
-                Schema::create($tableName, function (IndexBlueprint $index) {
+                Schema::create($tableName, function (Blueprint $index) {
                     $index->keyword('model_id');
                     $index->keyword('model_type');
                     $index->keyword('event');
                     $index->integer('ts');
-                    $index->mapProperty('meta', 'flattened');
+                    $index->flattened('meta');
                     $index->keyword('request.ip');
                     $index->keyword('request.browser');
                     $index->keyword('request.device');
@@ -159,7 +158,7 @@ abstract class EventModel extends Model
                     $index->keyword('request.timezone');
                     $index->boolean('request.is_bot');
                     $index->integer('request.threat_score');
-                    $index->geo('request.geo');
+                    $index->geoPoint('request.geo');
 
                 });
                 $validated['message'] = 'Index Created';

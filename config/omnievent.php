@@ -3,7 +3,7 @@
 return [
     'database' => 'elasticsearch',
 
-    'queue' => null, //Set queue to use for dispatching index builds, ex: default, high, low, etc.
+    'queue' => null, // Set queue to use for dispatching index builds, ex: default, high, low, etc.
 
     'throw_exceptions' => true,
 
