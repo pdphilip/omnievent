@@ -7,13 +7,14 @@ namespace PDPhilip\OmniEvent\Commands;
 use Exception;
 use Illuminate\Console\GeneratorCommand;
 use Illuminate\Support\Str;
+use OmniTerm\HasOmniTerm;
 use ReflectionClass;
 use RuntimeException;
 
-use function OmniTerm\render;
-
 class OmniEventMakeCommand extends GeneratorCommand
 {
+    use HasOmniTerm;
+
     public $signature = 'omnievent:make {model}';
 
     public $description = 'Make a new event for the specified model';
@@ -28,29 +29,16 @@ class OmniEventMakeCommand extends GeneratorCommand
         // Check if model exists
         $modelCheck = config('omnievent.namespaces.models', 'App\Models').'\\'.$model;
         if (! $this->class_exists_case_sensitive($modelCheck)) {
-
-            render((string) view('omnievent::cli.components.status', [
-                'name' => 'ERROR',
-                'status' => 'error',
-                'title' => 'Base Model ('.$model.') was not found at: '.$modelCheck,
-            ]));
-
+            $this->omni->statusError('ERROR', 'Base Model ('.$model.') was not found at: '.$modelCheck);
             $this->newLine();
 
             return self::FAILURE;
-
         }
 
         // check if there already is an indexedModel for the model
         $eventModel = config('omnievent.namespaces.events', 'App\Models\Events').'\\'.$model.'Event';
         if ($this->class_exists_case_sensitive($eventModel)) {
-
-            render((string) view('omnievent::cli.components.status', [
-                'name' => 'ERROR',
-                'status' => 'error',
-                'title' => 'Event Model (for '.$model.' Model) already exists at: '.$eventModel,
-            ]));
-
+            $this->omni->statusError('ERROR', 'Event Model (for '.$model.' Model) already exists at: '.$eventModel);
             $this->newLine();
 
             return self::FAILURE;
@@ -74,12 +62,8 @@ class OmniEventMakeCommand extends GeneratorCommand
         // Write the file to disk
         $this->files->put($path, $stub);
 
-        render((string) view('omnievent::cli.components.status', [
-            'name' => 'SUCCESS',
-            'status' => 'success',
-            'title' => 'Event Model (for '.$model.' Model) created at: '.$eventModel,
-        ]));
-        render((string) view('omnievent::cli.components.code-trait', [
+        $this->omni->statusSuccess('SUCCESS', 'Event Model (for '.$model.' Model) created at: '.$eventModel);
+        $this->omni->render((string) view('omnievent::cli.components.code-trait', [
             'model' => $model,
         ]));
 
