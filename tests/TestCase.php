@@ -3,29 +3,41 @@
 namespace PDPhilip\OmniEvent\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
+use PDPhilip\Elasticsearch\ElasticServiceProvider;
 use PDPhilip\OmniEvent\OmniEventServiceProvider;
 
 class TestCase extends Orchestra
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-    }
-
-    protected function getPackageProviders($app)
+    protected function getPackageProviders($app): array
     {
         return [
+            ElasticServiceProvider::class,
             OmniEventServiceProvider::class,
         ];
     }
 
-    public function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp($app): void
     {
-        config()->set('database.default', 'testing');
+        $app['config']->set('database.default', 'sqlite');
 
-        /*
-        $migration = include __DIR__.'/../database/migrations/create_omnilens_table.php.stub';
-        $migration->up();
-        */
+        $app['config']->set('database.connections.sqlite', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+        ]);
+
+        $app['config']->set('database.connections.elasticsearch', [
+            'driver' => 'elasticsearch',
+            'auth_type' => 'http',
+            'hosts' => ['http://localhost:9200'],
+            'options' => ['logging' => true],
+        ]);
+
+        $app['config']->set('omnievent.database', 'elasticsearch');
+        $app['config']->set('omnievent.throw_exceptions', true);
+        $app['config']->set('omnievent.save_request', false);
+        $app['config']->set('omnievent.namespaces', [
+            'models' => 'PDPhilip\\OmniEvent\\Tests\\Models',
+            'events' => 'PDPhilip\\OmniEvent\\Tests\\Models\\Events',
+        ]);
     }
 }

@@ -41,8 +41,8 @@ abstract class EventModel extends Model
 
     public function __construct(array $attributes = [])
     {
+        $this->connection = config('omnievent.database', 'elasticsearch');
         parent::__construct($attributes);
-        $this->setConnection(config('omnievent.database', 'elasticsearch'));
     }
 
     // ======================================================================
@@ -131,7 +131,9 @@ abstract class EventModel extends Model
 
     public static function deleteAllEvents(BaseModel $model): void
     {
-        static::where('model_id', $model->{$model->getKeyName()})->delete();
+        static::where('model_id', $model->{$model->getKeyName()})
+            ->get()
+            ->each->delete();
     }
 
     // ======================================================================
@@ -142,14 +144,15 @@ abstract class EventModel extends Model
     {
         try {
             // @phpstan-ignore-next-line
-            $tableName = (new static)->getTable();
-            $index = Schema::getIndex($tableName);
+            $eventModel = new static;
+            $tableName = $eventModel->getTable();
+            $schema = Schema::connection($eventModel->getConnectionName());
 
-            if ($index) {
+            if ($schema->hasTable($tableName)) {
                 return ['success' => true, 'message' => 'Index exists'];
             }
 
-            Schema::create($tableName, function (Blueprint $index) {
+            $schema->create($tableName, function (Blueprint $index) {
                 self::schemaDefinition($index);
             });
 
