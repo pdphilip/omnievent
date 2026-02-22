@@ -3,16 +3,14 @@
 return [
     'database' => 'elasticsearch',
 
-    'queue' => null, // Set queue to use for dispatching index builds, ex: default, high, low, etc.
-
     'throw_exceptions' => true,
+
+    'save_request' => true,
 
     'namespaces' => [
         'models' => 'App\Models',
         'events' => 'App\Models\Events',
     ],
-
-    'save_request' => true,
 
     'app_paths' => [
         'models' => 'Models/',

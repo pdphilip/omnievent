@@ -1,5 +1,7 @@
 <?php
 
+// Eleganced at 2026-02-22 19:30
+
 declare(strict_types=1);
 
 namespace PDPhilip\OmniEvent;
@@ -13,11 +15,6 @@ class OmniEventServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
         $package
             ->name('omnievent')
             ->hasConfigFile()

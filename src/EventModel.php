@@ -35,11 +35,15 @@ use PDPhilip\Elasticsearch\Schema\Schema;
  */
 abstract class EventModel extends Model
 {
-    public $connection = 'elasticsearch';
-
     protected $baseModel;
 
     const UPDATED_AT = null;
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->setConnection(config('omnievent.database', 'elasticsearch'));
+    }
 
     // ======================================================================
     // Relationships

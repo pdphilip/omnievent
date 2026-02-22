@@ -16,31 +16,21 @@ switch ($status) {
         $class = 'bg-sky-500 text-sky-200';
         $color = 'text-sky-500';
         break;
-    case 'enabled':
+    default:
         $class = 'bg-emerald-500 text-emerald-100';
         $color = 'text-emerald-500';
-        break;
-    default:
-        $class = 'bg-emerald-500  text-emerald-100';
-        $color = 'text-emerald-500';
-
 }
-$extraText = null;
-if (! empty($extra)) {
-    $extraText = $extra;
-}
-
 ?>
 <div>
-    @include('omnievent::cli.components.hr',['color' => $color])
+    @include('omnievent::cli.components.hr', ['color' => $color])
     <div class="flex space-x-1 mx-1">
-        <span class="{{$class}} px-1 ml-1">{{$name}}</span>
+        <span class="{{ $class }} px-1 ml-1">{{ $name }}</span>
         <span class="flex-1">{!! $title !!}</span>
         @if(!empty($help))
             @foreach ($help as $helperRow)
-                @include('omnievent::cli.components.status-help',['value' => $helperRow])
+                @include('omnievent::cli.components.status-help', ['value' => $helperRow])
             @endforeach
         @endif
     </div>
-    @include('omnievent::cli.components.hr',['color' => $color])
+    @include('omnievent::cli.components.hr', ['color' => $color])
 </div>
