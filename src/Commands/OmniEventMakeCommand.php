@@ -1,5 +1,7 @@
 <?php
 
+// Eleganced at 2026-02-22 19:15
+
 declare(strict_types=1);
 
 namespace PDPhilip\OmniEvent\Commands;
@@ -17,52 +19,42 @@ class OmniEventMakeCommand extends GeneratorCommand
 
     public $signature = 'omnievent:make {model}';
 
-    public $description = 'Make a new event for the specified model';
+    public $description = 'Make a new event model for the specified model';
+
+    protected $type = 'Model';
 
     public function handle(): int
     {
         $this->newLine();
-        $model = $this->argument('model');
-        // ensure casing is correct
-        $model = Str::studly($model);
+        $model = Str::studly($this->argument('model'));
 
-        // Check if model exists
-        $modelCheck = config('omnievent.namespaces.models', 'App\Models').'\\'.$model;
-        if (! $this->class_exists_case_sensitive($modelCheck)) {
-            $this->omni->statusError('ERROR', 'Base Model ('.$model.') was not found at: '.$modelCheck);
+        $modelClass = config('omnievent.namespaces.models', 'App\Models').'\\'.$model;
+        if (! $this->classExistsCaseSensitive($modelClass)) {
+            $this->omni->statusError('ERROR', 'Base Model ('.$model.') was not found at: '.$modelClass);
             $this->newLine();
 
             return self::FAILURE;
         }
 
-        // check if there already is an indexedModel for the model
-        $eventModel = config('omnievent.namespaces.events', 'App\Models\Events').'\\'.$model.'Event';
-        if ($this->class_exists_case_sensitive($eventModel)) {
-            $this->omni->statusError('ERROR', 'Event Model (for '.$model.' Model) already exists at: '.$eventModel);
+        $eventModelClass = config('omnievent.namespaces.events', 'App\Models\Events').'\\'.$model.'Event';
+        if ($this->classExistsCaseSensitive($eventModelClass)) {
+            $this->omni->statusError('ERROR', 'Event Model (for '.$model.' Model) already exists at: '.$eventModelClass);
             $this->newLine();
 
             return self::FAILURE;
         }
 
-        // Set the fully qualified class name for the new indexed model
-        $name = $this->qualifyClass($eventModel);
-
-        // Get the destination path for the generated file
+        $name = $this->qualifyClass($eventModelClass);
         $path = $this->getPath($name);
 
-        // Make sure the directory exists
         $this->makeDirectory($path);
 
-        // Get the stub file contents
         $stub = $this->files->get($this->getStub());
-
-        // Replace the stub variables
         $stub = $this->replaceNamespace($stub, $name)->replaceClass($stub, $name);
 
-        // Write the file to disk
         $this->files->put($path, $stub);
 
-        $this->omni->statusSuccess('SUCCESS', 'Event Model (for '.$model.' Model) created at: '.$eventModel);
+        $this->omni->statusSuccess('SUCCESS', 'Event Model (for '.$model.' Model) created at: '.$eventModelClass);
         $this->omni->render((string) view('omnievent::cli.components.code-trait', [
             'model' => $model,
         ]));
@@ -70,11 +62,9 @@ class OmniEventMakeCommand extends GeneratorCommand
         return self::SUCCESS;
     }
 
-    protected $type = 'Model';
-
     protected function getDefaultNamespace($rootNamespace): string
     {
-        return config('omnievent.namespaces.events', $rootNamespace.'\\Models\Events');
+        return config('omnievent.namespaces.events', $rootNamespace.'\\Models\\Events');
     }
 
     protected function getStub(): string
@@ -92,23 +82,24 @@ class OmniEventMakeCommand extends GeneratorCommand
     {
         $stub = parent::replaceClass($stub, $name);
 
-        return str_replace('{{ model }}', $this->argument('model'), $stub);
+        $modelsNamespace = config('omnievent.namespaces.models', 'App\\Models');
+
+        $stub = str_replace('{{ namespacedModel }}', $modelsNamespace, $stub);
+        $stub = str_replace('{{ model }}', Str::studly($this->argument('model')), $stub);
+
+        return $stub;
     }
 
-    public function class_exists_case_sensitive(string $class_name): bool
+    private function classExistsCaseSensitive(string $className): bool
     {
-        if (in_array($class_name, get_declared_classes(), true)) {
+        if (in_array($className, get_declared_classes(), true)) {
             return true;
         }
 
         try {
-            $reflectionClass = new ReflectionClass($class_name);
-
-            return $reflectionClass->getName() === $class_name;
-        } catch (Exception $e) {
-            // Class doesn't exist or couldn't be autoloaded
+            return (new ReflectionClass($className))->getName() === $className;
+        } catch (Exception) {
             return false;
         }
-
     }
 }

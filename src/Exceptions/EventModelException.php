@@ -8,17 +8,10 @@ use Exception;
 
 class EventModelException extends Exception
 {
-    private array $_details;
-
-    public function __construct($message, Exception $previous, $details = [])
+    public function __construct(string $message, ?Exception $previous = null)
     {
-        parent::__construct($message.': '.$previous->getMessage(), $previous->getCode(), $previous);
+        $fullMessage = $previous ? $message.': '.$previous->getMessage() : $message;
 
-        $this->_details = $details;
-    }
-
-    public function getDetails(): array
-    {
-        return $this->_details;
+        parent::__construct($fullMessage, $previous?->getCode() ?? 0, $previous);
     }
 }

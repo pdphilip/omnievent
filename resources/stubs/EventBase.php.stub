@@ -1,17 +1,16 @@
 <?php
 
-namespace App\Models\Events;
+namespace {{ namespace }};
 
-use App\Models\{{ model }};
+use {{ namespacedModel }}\{{ model }};
 use PDPhilip\OmniEvent\EventModel;
 
 class {{ model }}Event extends EventModel
 {
     protected $baseModel = {{ model }}::class;
 
-    public function modelType({{ model }} $model)
+    public function modelType({{ model }} $model): ?string
     {
         return null;
     }
-
 }

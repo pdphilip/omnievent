@@ -1,25 +1,25 @@
 <?php
 
+// Eleganced at 2026-02-22 19:15
+
 declare(strict_types=1);
 
 namespace PDPhilip\OmniEvent;
 
 use Exception;
+use Illuminate\Database\Eloquent\Model as BaseModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PDPhilip\Elasticsearch\Eloquent\Builder as EloquentBuilder;
 use PDPhilip\Elasticsearch\Eloquent\Model;
 use PDPhilip\Elasticsearch\Query\Builder;
 use PDPhilip\Elasticsearch\Schema\Blueprint;
 use PDPhilip\Elasticsearch\Schema\Schema;
-use PDPhilip\OmniEvent\Traits\Timer;
 
 /**
  * @method static EloquentBuilder query()
- *
- * *****Fields*******
  *
  * @property string $_id
  * @property string $model_id
@@ -29,181 +29,153 @@ use PDPhilip\OmniEvent\Traits\Timer;
  * @property array $meta
  * @property array $request
  * @property Carbon|null $created_at
- * @property-read mixed $hits
  * @property-read mixed $model
  *
  * @mixin Builder
  */
 abstract class EventModel extends Model
 {
-    use Timer;
-
     public $connection = 'elasticsearch';
 
     protected $baseModel;
 
     const UPDATED_AT = null;
 
-    public function model()
+    // ======================================================================
+    // Relationships
+    // ======================================================================
+
+    public function model(): BelongsTo
     {
         return $this->belongsTo($this->getBaseModel(), 'model_id');
+    }
+
+    public function asModel(): ?BaseModel
+    {
+        if (! $this->model_id) {
+            return null;
+        }
+
+        $baseModel = $this->getBaseModel();
+
+        return $baseModel::find($this->model_id);
+    }
+
+    // ======================================================================
+    // Base Model Resolution
+    // ======================================================================
+
+    public function getBaseModel(): string
+    {
+        if ($this->baseModel) {
+            return $this->baseModel;
+        }
+
+        return $this->guessBaseModelName();
     }
 
     public function guessBaseModelName(): string
     {
         $baseTable = $this->getTable();
+
         $prefix = DB::connection('elasticsearch')->getConfig('index_prefix');
         if ($prefix) {
             $baseTable = str_replace($prefix.'_', '', $baseTable);
         }
 
         $baseTable = str_replace('_events', '', $baseTable);
-        $baseModel = Str::singular($baseTable);
+        $modelName = Str::studly(Str::singular($baseTable));
 
-        $baseModel = Str::studly($baseModel);
-
-        return 'App\Models\\'.$baseModel;
+        return config('omnievent.namespaces.models', 'App\\Models').'\\'.$modelName;
     }
 
-    public function getBaseModel(): string
+    // ======================================================================
+    // Event Operations
+    // ======================================================================
+
+    public static function saveEvent(BaseModel $model, string $event, array $meta = []): bool
     {
-        if (! $this->baseModel) {
-            return $this->guessBaseModelName();
-        }
+        // @phpstan-ignore-next-line
+        $eventRecord = new static;
 
-        return $this->baseModel;
-    }
+        $eventRecord->model_id = $model->{$model->getKeyName()};
+        $eventRecord->event = $event;
+        $eventRecord->ts = time();
 
-    public function asModel()
-    {
-        if ($this->model_id) {
-            $baseModel = $this->getBaseModel();
-
-            return $baseModel::find($this->model_id);
-        }
-
-        return null;
-
-    }
-
-    public static function saveEvent($model, $event, $meta = []): bool
-    {
-        try {
-            $model_id = $model->{$model->getKeyName()};
-
-            // @phpstan-ignore-next-line
-            $eventModel = new static;
-            $modelType = null;
-            if (method_exists($eventModel, 'modelType')) {
-                $modelType = $eventModel->modelType($model);
-            }
-            $eventModel->model_id = $model_id;
+        if (method_exists($eventRecord, 'modelType')) {
+            $modelType = $eventRecord->modelType($model);
             if ($modelType) {
-                $eventModel->model_type = $modelType;
+                $eventRecord->model_type = $modelType;
             }
-            $eventModel->event = $event;
-            if ($meta) {
-                if (! is_array($meta)) {
-                    $meta = [
-                        'key' => $meta,
-                    ];
-                }
-                $eventModel->meta = $meta;
-            }
-            if (config('omnievent.save_request')) {
-                $eventModel->request = OmniEvent::buildRequest();
-            }
-            $eventModel->ts = time();
-            $eventModel->withoutRefresh()->save();
-
-        } catch (Exception $e) {
-            Log::error($e->getMessage(), $e->getTrace());
-
-            return false;
         }
+
+        if ($meta) {
+            $eventRecord->meta = $meta;
+        }
+
+        if (config('omnievent.save_request')) {
+            $requestData = OmniEvent::buildRequest();
+            if ($requestData) {
+                $eventRecord->request = $requestData;
+            }
+        }
+
+        $eventRecord->withoutRefresh()->save();
 
         return true;
     }
 
+    public static function deleteAllEvents(BaseModel $model): void
+    {
+        static::where('model_id', $model->{$model->getKeyName()})->delete();
+    }
+
+    // ======================================================================
+    // Schema
+    // ======================================================================
+
     public static function validateSchema(): array
     {
-        $validated['success'] = false;
-        $validated['data'] = [];
-        $validated['message'] = '';
         try {
             // @phpstan-ignore-next-line
-            $eventModel = new static;
-            $eventModel->startTimer();
-            $tableName = $eventModel->getTable();
+            $tableName = (new static)->getTable();
             $index = Schema::getIndex($tableName);
-            $validated['message'] = 'Index Exists';
-            if (! $index) {
-                Schema::create($tableName, function (Blueprint $index) {
-                    $index->keyword('model_id');
-                    $index->keyword('model_type');
-                    $index->keyword('event');
-                    $index->integer('ts');
-                    $index->flattened('meta');
-                    $index->keyword('request.ip');
-                    $index->keyword('request.browser');
-                    $index->keyword('request.device');
-                    $index->keyword('request.deviceType');
-                    $index->keyword('request.os');
-                    $index->keyword('request.country');
-                    $index->keyword('request.region');
-                    $index->keyword('request.city');
-                    $index->keyword('request.postal_code');
-                    $index->float('request.lat');
-                    $index->float('request.lon');
-                    $index->keyword('request.timezone');
-                    $index->boolean('request.is_bot');
-                    $index->integer('request.threat_score');
-                    $index->geoPoint('request.geo');
 
-                });
-                $validated['message'] = 'Index Created';
+            if ($index) {
+                return ['success' => true, 'message' => 'Index exists'];
             }
-            $validated['success'] = true;
-            $validated['data'] = $eventModel->getTime();
 
-            return $validated;
-        } catch (\Exception $e) {
-            $validated['message'] = $e->getMessage();
+            Schema::create($tableName, function (Blueprint $index) {
+                self::schemaDefinition($index);
+            });
+
+            return ['success' => true, 'message' => 'Index created'];
+
+        } catch (Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
         }
-
-        return $validated;
     }
 
-    public static function transformModelRelationship($collection)
+    protected static function schemaDefinition(Blueprint $index): void
     {
-        // @phpstan-ignore-next-line
-        $baseModel = (new static)->getBaseModel();
-        $modelName = Str::lcfirst(class_basename($baseModel));
-
-        return $collection->transform(function ($item) use ($modelName) {
-
-            $item->{$modelName.'_id'} = $item->model_id;
-            if (isset($item->model_id_count)) {
-                // @phpstan-ignore-next-line
-                $item->hits = $item->model_id_count;
-                unset($item->model_id_count);
-            }
-            if (isset($item->model)) {
-                $item->{$modelName} = $item->model;
-                unset($item->model);
-            }
-
-            return $item;
-        });
-    }
-
-    public static function deleteAllEvents($model): void
-    {
-        $model_id = $model->{$model->getKeyName()};
-
-        $events = static::where('model_id', $model_id)->get();
-        $events->each(function ($event) {
-            $event->delete();
-        });
+        $index->keyword('model_id');
+        $index->keyword('model_type');
+        $index->keyword('event');
+        $index->integer('ts');
+        $index->flattened('meta');
+        $index->keyword('request.ip');
+        $index->keyword('request.browser');
+        $index->keyword('request.device');
+        $index->keyword('request.deviceType');
+        $index->keyword('request.os');
+        $index->keyword('request.country');
+        $index->keyword('request.region');
+        $index->keyword('request.city');
+        $index->keyword('request.postal_code');
+        $index->float('request.lat');
+        $index->float('request.lon');
+        $index->keyword('request.timezone');
+        $index->boolean('request.is_bot');
+        $index->geoPoint('request.geo');
     }
 }

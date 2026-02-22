@@ -1,92 +1,95 @@
 <?php
 
+// Eleganced at 2026-02-22 19:15
+
 declare(strict_types=1);
 
 namespace PDPhilip\OmniEvent;
 
+use Exception;
 use PDPhilip\CfRequest\CfRequest;
-use PDPhilip\Elasticsearch\Eloquent\Model;
 
 class OmniEvent
 {
-    // ----------------------------------------------------------------------
-    // Events
-    // ----------------------------------------------------------------------
-
-    public static function fetchEventModelClass($baseModel): string
+    public static function fetchEventModelClass(object $baseModel): string
     {
         return config('omnievent.namespaces.events').'\\'.class_basename($baseModel).'Event';
     }
 
-    public static function fetchEventModel($baseModel): EventModel
+    public static function fetchEventModel(object $baseModel): EventModel
     {
-        $eventModel = self::fetchEventModelClass($baseModel);
+        $class = self::fetchEventModelClass($baseModel);
 
-        return new $eventModel;
-
+        return new $class;
     }
 
-    public static function getEventModel($eventModel): Model
+    public static function resolveEventModel(string $eventModelName): EventModel
     {
-        $eventModel = config('omnievent.namespaces.events').'\\'.$eventModel;
+        $class = config('omnievent.namespaces.events').'\\'.$eventModelName;
 
-        return new $eventModel;
+        return new $class;
     }
 
-    public static function returnAllRegisteredEventModels()
+    public static function allRegisteredEventModels(): array
     {
-        $eventModels = [];
+        $path = app_path(config('omnievent.app_paths.events'));
 
-        foreach (glob(app_path(config('omnievent.app_paths.events').'*.php')) as $file) {
-            $eventModel = (config('omnievent.namespaces.events').'\\'.basename($file, '.php'));
-            $eventModels[] = (new $eventModel)::class;
+        if (! is_dir($path)) {
+            return [];
         }
 
-        return $eventModels;
+        $files = glob($path.'*.php');
+
+        if (! $files) {
+            return [];
+        }
+
+        $namespace = config('omnievent.namespaces.events');
+
+        return array_map(
+            fn (string $file) => $namespace.'\\'.basename($file, '.php'),
+            $files
+        );
     }
 
-    public static function buildRequest()
+    // ======================================================================
+    // Request Capture
+    // ======================================================================
+
+    public static function buildRequest(): array
     {
-        $request = new CfRequest;
+        try {
+            $request = app(CfRequest::class);
+        } catch (Exception) {
+            return [];
+        }
+
         $device = $request->deviceBrand();
         $model = $request->deviceModel();
-        if ($device !== $model) {
-            $device = $device.' '.$model;
-        }
-        $requestData = [
+
+        $data = [
             'ip' => $request->ip(),
             'browser' => $request->browser(),
-            'device' => $device,
+            'device' => $device !== $model ? $device.' '.$model : $device,
             'deviceType' => $request->deviceType(),
             'os' => $request->os(),
+            'country' => $request->country(),
+            'region' => $request->region(),
+            'city' => $request->city(),
+            'postal_code' => $request->postalCode(),
+            'lat' => $request->lat(),
+            'lon' => $request->lon(),
+            'timezone' => $request->timezone(),
+            'is_bot' => $request->isBot(),
         ];
 
-        $cf['country'] = $request->country();
-        $cf['region'] = $request->region();
-        $cf['city'] = $request->city();
-        $cf['postal_code'] = $request->postalCode();
-        $cf['lat'] = $request->lat();
-        $cf['lon'] = $request->lon();
-        $cf['timezone'] = $request->timezone();
-        $cf['is_bot'] = $request->isBot();
-        $cf['threat_score'] = $request->threatScore();
-        $cf['geo'] = null;
-        if ($cf['lat'] && $cf['lon']) {
-            $cf['geo'] = [
+        if ($data['lat'] && $data['lon']) {
+            $data['geo'] = [
                 'type' => 'Point',
-                'coordinates' => [
-                    (float) $cf['lon'],
-                    (float) $cf['lat'],
-                ],
+                'coordinates' => [(float) $data['lon'], (float) $data['lat']],
             ];
         }
 
-        foreach ($cf as $key => $value) {
-            if ($value) {
-                $requestData[$key] = $value;
-            }
-        }
-
-        return $requestData;
+        return array_filter($data, fn ($value) => $value !== null && $value !== '');
     }
 }
