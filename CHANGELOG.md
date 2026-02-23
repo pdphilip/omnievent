@@ -2,6 +2,16 @@
 
 All notable changes to `omnievent` will be documented in this file.
 
+## v3.1.0
+
+### Added
+
+- `triggerEvent()` and `eventSearch()` now accept `\BackedEnum` values in addition to strings. Both string-backed and int-backed enums are supported — the value is extracted and cast to string automatically.
+
+### Tests
+
+- Added `EventableEnumTest` covering enum and string inputs for `triggerEvent()` and `eventSearch()`.
+
 ## v3.0.0
 
 ### Breaking Changes

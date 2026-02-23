@@ -29,9 +29,13 @@ trait Eventable
         }
     }
 
-    public function triggerEvent(string $event, array $meta = []): bool
+    public function triggerEvent(string|\BackedEnum $event, array $meta = []): bool
     {
         try {
+            if ($event instanceof \BackedEnum) {
+                $event = (string) $event->value;
+            }
+
             return static::$eventModel::saveEvent($this, $event, $meta);
         } catch (Exception $e) {
             if (config('omnievent.throw_exceptions', true)) {
@@ -49,8 +53,12 @@ trait Eventable
         return static::$eventModel->query();
     }
 
-    public static function eventSearch(string $event): Collection
+    public static function eventSearch(string|\BackedEnum $event): Collection
     {
+        if ($event instanceof \BackedEnum) {
+            $event = (string) $event->value;
+        }
+
         return static::viaEvents()->where('event', $event)->get();
     }
 }
