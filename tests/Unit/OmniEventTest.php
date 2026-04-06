@@ -1,9 +1,10 @@
 <?php
 
+use Illuminate\Database\Eloquent\Model;
 use PDPhilip\OmniEvent\OmniEvent;
 
 it('resolves event model class name from config namespace', function () {
-    $model = new class extends \Illuminate\Database\Eloquent\Model {};
+    $model = new class extends Model {};
 
     $class = OmniEvent::fetchEventModelClass($model);
     $expected = config('omnievent.namespaces.events').'\\'.class_basename($model).'Event';
