@@ -2,6 +2,31 @@
 
 All notable changes to `omnievent` will be documented in this file.
 
+## v3.2.0 - 2026-04-06
+
+This release is compatible with Laravel 11, 12 & 13
+
+### Added
+
+- **Laravel 13 support**
+- Composer test scripts: `composer test:l11`, `composer test:l12`, `composer test:l13`, `composer test:all`
+
+### Fixed
+
+- **L13 boot compatibility** - `Eventable::bootEventable()` refactored to use class string instead of `new static` to avoid L13's `LogicException` on model instantiation during boot
+
+### Changed
+
+- Dropped Laravel 10 support (EOL)
+- PHP minimum bumped from 8.2 to 8.3
+- `pdphilip/elasticsearch` bumped to `^5.6`
+- `pdphilip/omniterm` bumped to `^3.0`
+- `pdphilip/cf-request` bumped to `^3.1`
+- CI matrix updated: PHP 8.3/8.4, Laravel 11/12/13
+- PHPStan config: removed `config` path (larastan 3 false positive), regenerated baseline
+
+**Full Changelog**: https://github.com/pdphilip/omnievent/compare/v3.1.0...v3.2.0
+
 ## v3.1.0
 
 ### Added
@@ -16,7 +41,8 @@ All notable changes to `omnievent` will be documented in this file.
 
 ### Breaking Changes
 
-- **Removed chainable query methods** from the `Eventable` trait: `eventFrom()`, `eventTo()`, `whereType()`, `modelOnly()`, `getEvents()`, `distinctEvents()`, `paginateDistinctEvents()`, `countEvents()`, `paginateEvents()`. Use `viaEvents()` with standard Eloquent builder methods instead.
+- **Removed chainable query methods** from the `Eventable` trait: `eventFrom()`, `eventTo()`, `whereType()`, `modelOnly()`, `getEvents()`, `distinctEvents()`, `paginateDistinctEvents()`, `countEvents()`, `paginateEvents()`. Use
+  `viaEvents()` with standard Eloquent builder methods instead.
 - **`viaEvents()`** now returns an Elasticsearch Eloquent `Builder` directly (was returning the model instance for chaining).
 - **Removed `validateEventModel()`**, `validateConnection()`, `validateAndContinue()` from the `Eventable` trait. Schema validation now happens once on boot.
 - **Removed `transformModelRelationship()`** from `EventModel`.
