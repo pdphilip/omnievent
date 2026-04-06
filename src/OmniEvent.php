@@ -16,6 +16,13 @@ class OmniEvent
         return config('omnievent.namespaces.events').'\\'.class_basename($baseModel).'Event';
     }
 
+    public static function fetchEventModelFromClass(string $class): EventModel
+    {
+        $eventClass = config('omnievent.namespaces.events').'\\'.class_basename($class).'Event';
+
+        return new $eventClass;
+    }
+
     public static function fetchEventModel(object $baseModel): EventModel
     {
         $class = self::fetchEventModelClass($baseModel);

@@ -17,7 +17,7 @@ trait Eventable
 
     public static function bootEventable(): void
     {
-        $eventModel = OmniEvent::fetchEventModel(new static);
+        $eventModel = OmniEvent::fetchEventModelFromClass(static::class);
         $validated = $eventModel::validateSchema();
 
         static::$eventModel = $eventModel;
