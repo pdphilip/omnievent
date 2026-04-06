@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use PDPhilip\OmniEvent\Tests\Models\Events\UserEvent;
 use PDPhilip\OmniEvent\Tests\Models\User;
 
@@ -21,7 +22,7 @@ it('defines belongsTo relationship to base model', function () {
     $eventModel = new UserEvent;
     $relation = $eventModel->model();
 
-    expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+    expect($relation)->toBeInstanceOf(BelongsTo::class);
     expect($relation->getForeignKeyName())->toBe('model_id');
 });
 

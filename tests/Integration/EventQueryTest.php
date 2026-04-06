@@ -2,13 +2,14 @@
 
 use Illuminate\Support\Collection;
 use PDPhilip\Elasticsearch\Eloquent\Builder;
+use PDPhilip\Elasticsearch\Schema\Schema;
 use PDPhilip\OmniEvent\Tests\Models\Events\UserEvent;
 use PDPhilip\OmniEvent\Tests\Models\User;
 
 beforeEach(function () {
     User::executeSchema();
 
-    $schema = \PDPhilip\Elasticsearch\Schema\Schema::connection('elasticsearch');
+    $schema = Schema::connection('elasticsearch');
     $schema->dropIfExists('user_events');
 
     UserEvent::validateSchema();
