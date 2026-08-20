@@ -31,7 +31,7 @@ This release is compatible with Laravel 11, 12 & 13
 
 ### Added
 
-- `triggerEvent()` and `eventSearch()` now accept `\BackedEnum` values in addition to strings. Both string-backed and int-backed enums are supported — the value is extracted and cast to string automatically.
+- `triggerEvent()` and `eventSearch()` now accept `\BackedEnum` values in addition to strings. Both string-backed and int-backed enums are supported - the value is extracted and cast to string automatically.
 
 ### Tests
 
